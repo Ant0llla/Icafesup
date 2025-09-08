@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = env("DATABASE_PROVIDER") ?? "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Machine {
+  id        String   @id
+  name      String
+  zone      String?
+  inUse     Boolean
+  sessions  Session[]
+  snapshots OccupancySnapshot[]
+  temps     Temperature[]
+}
+
+model Session {
+  id          String     @id
+  machineId   String
+  startedAt   DateTime
+  ratePerHour Float
+  promoCode   String?
+  machine     Machine    @relation(fields: [machineId], references: [id])
+  transactions Transaction[]
+}
+
+model Transaction {
+  id        String   @id
+  type      String
+  amount    Float
+  currency  String
+  ts        DateTime @index
+  cashierId String?
+  sessionId String?
+  promoCode String?
+  session   Session? @relation(fields: [sessionId], references: [id])
+  promoUses PromoUse[]
+}
+
+model OccupancySnapshot {
+  id        String   @id @default(uuid())
+  machineId String
+  inUse     Boolean
+  ts        DateTime @index
+  machine   Machine  @relation(fields: [machineId], references: [id])
+}
+
+model Temperature {
+  id        String   @id @default(uuid())
+  machineId String
+  value     Float
+  ts        DateTime @index
+  machine   Machine  @relation(fields: [machineId], references: [id])
+}
+
+model PromoUse {
+  id            String      @id @default(uuid())
+  promoCode     String
+  ts            DateTime    @index
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+}
+
+model CashDrawer {
+  id       String   @id @default(uuid())
+  balance  Float
+  currency String
+  shiftId  String?
+  ts       DateTime @default(now()) @index
+}
